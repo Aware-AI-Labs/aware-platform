@@ -75,7 +75,10 @@ export default async function Home() {
           <div className="mt-6 max-w-2xl">
             <Markdown>{brief.data.body}</Markdown>
             <p className="text-xs text-faint mt-3">
-              — AWARE, {relativeTime(brief.data.created_at)} ago
+              — AWARE,{" "}
+              {relativeTime(brief.data.created_at) === "now"
+                ? "just now"
+                : `${relativeTime(brief.data.created_at)} ago`}
             </p>
           </div>
         ) : (

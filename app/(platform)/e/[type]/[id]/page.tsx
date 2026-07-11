@@ -212,7 +212,10 @@ export default async function EntityPage({
             </a>
           )}
           <span className="text-faint">
-            updated {relativeTime(row.updated_at ?? row.created_at)} ago
+            updated{" "}
+            {relativeTime(row.updated_at ?? row.created_at) === "now"
+              ? "just now"
+              : `${relativeTime(row.updated_at ?? row.created_at)} ago`}
           </span>
         </div>
       </header>
