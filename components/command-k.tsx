@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 interface Result {
@@ -9,6 +9,23 @@ interface Result {
   label: string;
   hint: string;
 }
+
+interface Item {
+  key: string;
+  section: string;
+  label: string;
+  hint?: string;
+  run: () => void;
+}
+
+const TYPE_LABEL: Record<string, string> = {
+  workstreams: "Work",
+  tasks: "Tasks",
+  people: "People",
+  docs: "Docs",
+  decisions: "Decisions",
+  experiments: "Experiments",
+};
 
 export function CommandK() {
   const [open, setOpen] = useState(false);
@@ -51,6 +68,7 @@ export function CommandK() {
     abortRef.current?.abort();
     if (query.trim().length < 2) {
       setResults([]);
+      setSelected(0);
       return;
     }
     const controller = new AbortController();
@@ -70,47 +88,98 @@ export function CommandK() {
     return () => clearTimeout(t);
   }, [query]);
 
-  const askAware = useCallback(() => {
-    setOpen(false);
-    window.dispatchEvent(
-      new CustomEvent("aware:ask", { detail: { question: query } })
-    );
-  }, [query]);
+  const close = useCallback(() => setOpen(false), []);
 
-  const go = useCallback(
-    (r: Result) => {
-      setOpen(false);
-      router.push(`/e/${r.type}/${r.id}`);
-    },
-    [router]
-  );
-
-  // rows = results + trailing "ask AWARE" action
-  const total = results.length + (query.trim() ? 1 : 0);
+  const items = useMemo<Item[]>(() => {
+    const q = query.trim();
+    const actions: Item[] = [
+      {
+        key: "ask",
+        section: "AWARE",
+        label: q ? `Ask AWARE: “${q}”` : "Ask AWARE",
+        run: () => {
+          close();
+          window.dispatchEvent(
+            new CustomEvent("aware:ask", { detail: { question: q } })
+          );
+        },
+      },
+      ...(q
+        ? [
+            {
+              key: "task",
+              section: "AWARE",
+              label: `Create task: “${q}”`,
+              run: () => {
+                close();
+                window.dispatchEvent(
+                  new CustomEvent("aware:ask", {
+                    detail: { question: `Create a task: ${q}` },
+                  })
+                );
+              },
+            },
+          ]
+        : [
+            {
+              key: "invite",
+              section: "Go",
+              label: "Invite someone",
+              run: () => {
+                close();
+                router.push("/people");
+              },
+            },
+            {
+              key: "mind",
+              section: "Go",
+              label: "Watch AWARE think",
+              hint: "Mind",
+              run: () => {
+                close();
+                router.push("/mind");
+              },
+            },
+          ]),
+    ];
+    const searchItems: Item[] = results.map((r) => ({
+      key: `${r.type}-${r.id}`,
+      section: TYPE_LABEL[r.type] ?? r.type,
+      label: r.label,
+      hint: r.hint,
+      run: () => {
+        close();
+        router.push(`/e/${r.type}/${r.id}`);
+      },
+    }));
+    // Results first when searching; actions first when empty
+    return q ? [...searchItems, ...actions] : actions;
+  }, [query, results, router, close]);
 
   function onInputKey(e: React.KeyboardEvent) {
     if (e.key === "ArrowDown") {
       e.preventDefault();
-      setSelected((s) => Math.min(s + 1, total - 1));
+      setSelected((s) => Math.min(s + 1, items.length - 1));
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
       setSelected((s) => Math.max(s - 1, 0));
     } else if (e.key === "Enter") {
       e.preventDefault();
-      if (selected < results.length) go(results[selected]);
-      else if (query.trim()) askAware();
+      items[selected]?.run();
     }
   }
 
   if (!open) return null;
 
+  let lastSection = "";
+
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-start justify-center pt-[16vh] px-4"
-      onClick={() => setOpen(false)}
+      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-start justify-center pt-[14vh] px-4"
+      onClick={close}
     >
       <div
-        className="w-full max-w-lg bg-raised border border-line-strong rounded-xl overflow-hidden shadow-2xl rise"
+        className="w-full max-w-lg glass border border-line-strong rounded-2xl overflow-hidden shadow-2xl rise"
         onClick={(e) => e.stopPropagation()}
       >
         <input
@@ -118,48 +187,35 @@ export function CommandK() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={onInputKey}
-          placeholder="Search the company, or ask AWARE…"
-          className="w-full bg-transparent px-4 py-3.5 text-sm outline-none placeholder:text-faint border-b border-line"
+          placeholder="Search, jump, create, or ask…"
+          className="w-full bg-transparent px-5 py-4 text-sm outline-none placeholder:text-faint border-b border-line"
         />
-        <div className="max-h-72 overflow-y-auto py-1.5">
-          {results.map((r, i) => (
-            <button
-              key={`${r.type}-${r.id}`}
-              onClick={() => go(r)}
-              onMouseEnter={() => setSelected(i)}
-              className={`w-full flex items-center justify-between gap-3 px-4 py-2 text-left text-sm transition-colors ${
-                selected === i ? "bg-hover" : ""
-              }`}
-            >
-              <span className="truncate">{r.label}</span>
-              <span className="text-xs text-faint shrink-0">{r.hint}</span>
-            </button>
-          ))}
-          {query.trim() && (
-            <button
-              onClick={askAware}
-              onMouseEnter={() => setSelected(results.length)}
-              className={`w-full flex items-center gap-2 px-4 py-2 text-left text-sm transition-colors ${
-                selected === results.length ? "bg-hover" : ""
-              }`}
-            >
-              <span
-                className="text-[10px] font-medium tracking-wider uppercase"
-                style={{ color: "var(--accent)" }}
-              >
-                AWARE
-              </span>
-              <span className="text-muted truncate">
-                Ask: “{query.trim()}”
-              </span>
-            </button>
-          )}
-          {!results.length && !query.trim() && (
-            <p className="px-4 py-6 text-sm text-faint">
-              Workstreams, tasks, people, docs, decisions, experiments — or ask
-              AWARE anything.
-            </p>
-          )}
+        <div className="max-h-80 overflow-y-auto py-1.5">
+          {items.map((item, i) => {
+            const showSection = item.section !== lastSection;
+            lastSection = item.section;
+            return (
+              <div key={item.key}>
+                {showSection && (
+                  <p className="eyebrow px-5 pt-3 pb-1.5">{item.section}</p>
+                )}
+                <button
+                  onClick={item.run}
+                  onMouseEnter={() => setSelected(i)}
+                  className={`w-full flex items-center justify-between gap-3 px-5 py-2 text-left text-sm transition-colors ${
+                    selected === i ? "bg-hover" : ""
+                  }`}
+                >
+                  <span className="truncate">{item.label}</span>
+                  {item.hint && (
+                    <span className="text-xs text-faint shrink-0">
+                      {item.hint}
+                    </span>
+                  )}
+                </button>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>

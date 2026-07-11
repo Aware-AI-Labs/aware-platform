@@ -2,9 +2,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { entityPath, relativeTime } from "@/lib/data";
-import { Markdown } from "@/components/ui";
-import { ActivityFeed } from "@/components/activity-feed";
+import { Markdown, ProgressHair } from "@/components/ui";
 import { StatusPicker, CommentForm } from "@/components/entity-controls";
+import { githubEnabled, listRecentCommits } from "@/lib/github";
 import type { Activity, Comment, EntityType } from "@/lib/types";
 
 const TABLES: EntityType[] = [
@@ -108,7 +108,9 @@ export default async function EntityPage({
     .maybeSingle();
   if (!row) notFound();
 
-  const [links, activity, comments, workstream] = await Promise.all([
+  const isFundraise = table === "workstreams" && row.kind === "fundraise";
+
+  const [links, activity, comments, workstream, commitments] = await Promise.all([
     resolveLinks(supabase, table, id),
     supabase
       .from("activity")
@@ -116,7 +118,7 @@ export default async function EntityPage({
       .eq("target_type", table)
       .eq("target_id", id)
       .order("id", { ascending: false })
-      .limit(15),
+      .limit(12),
     supabase
       .from("comments")
       .select("*")
@@ -130,7 +132,29 @@ export default async function EntityPage({
           .eq("id", row.workstream_id)
           .maybeSingle()
       : Promise.resolve({ data: null }),
+    isFundraise
+      ? supabase
+          .from("finance_items")
+          .select("amount")
+          .eq("kind", "commitment")
+          .eq("status", "active")
+      : Promise.resolve({ data: [] }),
   ]);
+
+  // Live commits for workstreams with a repo
+  let commits: Array<{ sha: string; message: string; author?: string; date?: string }> = [];
+  if (table === "workstreams" && row.repo && githubEnabled()) {
+    try {
+      commits = await listRecentCommits(row.repo, 3);
+    } catch {
+      /* quiet */
+    }
+  }
+
+  const committed = ((commitments.data as Array<{ amount: number }>) ?? []).reduce(
+    (s, c) => s + Number(c.amount),
+    0
+  );
 
   const title = row[LABEL_FIELD[table]] ?? "Untitled";
   const body =
@@ -157,7 +181,7 @@ export default async function EntityPage({
             .join("\n\n")
         : (row.body ?? "");
 
-  const meta: Array<[string, string]> = [];
+  const meta: Array<[string, React.ReactNode]> = [];
   if (row.kind) meta.push(["kind", row.kind]);
   if (typeof row.priority === "number") meta.push(["priority", `p${row.priority}`]);
   if (row.due_date) meta.push(["due", row.due_date]);
@@ -171,6 +195,32 @@ export default async function EntityPage({
   }
   if (row.decided_by_name) meta.push(["decided by", row.decided_by_name]);
   if (row.created_by_name && table === "docs") meta.push(["by", row.created_by_name]);
+  if (workstream.data) {
+    meta.push([
+      "in",
+      <Link
+        key="ws"
+        href={entityPath("workstreams", workstream.data.id)}
+        className="hover:text-fg transition-colors underline underline-offset-2"
+      >
+        {workstream.data.name}
+      </Link>,
+    ]);
+  }
+  if (row.url) {
+    meta.push([
+      "link",
+      <a
+        key="url"
+        href={row.url}
+        target="_blank"
+        rel="noreferrer"
+        className="hover:text-fg transition-colors underline underline-offset-2"
+      >
+        {String(row.url).replace(/^https?:\/\//, "").slice(0, 32)}
+      </a>,
+    ]);
+  }
 
   return (
     <div className="space-y-10">
@@ -183,98 +233,149 @@ export default async function EntityPage({
             </span>
           )}
         </div>
-        <h1 className="display text-3xl sm:text-4xl mt-2">{title}</h1>
-        <div className="flex items-center gap-4 mt-4 flex-wrap text-xs text-muted">
-          {row.status && <StatusPicker table={table} id={id} current={row.status} />}
-          {meta.map(([k, v]) => (
-            <span key={k}>
-              <span className="text-faint">{k} </span>
-              {v}
-            </span>
-          ))}
-          {workstream.data && (
-            <Link
-              href={entityPath("workstreams", workstream.data.id)}
-              className="hover:text-fg transition-colors"
-            >
-              <span className="text-faint">in </span>
-              {workstream.data.name}
-            </Link>
-          )}
-          {row.url && (
-            <a
-              href={row.url}
-              target="_blank"
-              rel="noreferrer"
-              className="hover:text-fg transition-colors underline underline-offset-2"
-            >
-              {String(row.url).replace(/^https?:\/\//, "")}
-            </a>
-          )}
-          <span className="text-faint">
-            updated{" "}
-            {relativeTime(row.updated_at ?? row.created_at) === "now"
-              ? "just now"
-              : `${relativeTime(row.updated_at ?? row.created_at)} ago`}
-          </span>
-        </div>
+        <h1 className="display text-3xl sm:text-5xl mt-3 text-balance">{title}</h1>
+        {row.summary && (
+          <p className="text-muted text-sm mt-4 max-w-2xl">{row.summary}</p>
+        )}
+        {isFundraise && (
+          <div className="mt-6 max-w-2xl">
+            <ProgressHair value={committed} max={75_000_000} />
+            <p className="text-[11px] text-faint mt-2 tabular-nums">
+              ${Math.round(committed / 1e6)}M committed of $75M
+            </p>
+          </div>
+        )}
       </header>
 
-      {row.summary && (
-        <p className="text-muted text-sm max-w-2xl -mt-4 rise rise-1">{row.summary}</p>
-      )}
+      <div className="grid lg:grid-cols-[1fr_260px] gap-10 lg:gap-14">
+        {/* Living doc + notes */}
+        <div className="min-w-0 space-y-10">
+          {body && (
+            <section className="rise rise-1">
+              <Markdown>{body}</Markdown>
+            </section>
+          )}
 
-      {body && (
-        <section className="rise rise-1 max-w-2xl">
-          <Markdown>{body}</Markdown>
-        </section>
-      )}
+          {commits.length > 0 && (
+            <section className="rise rise-2">
+              <p className="eyebrow mb-3">Code</p>
+              <ul className="space-y-2">
+                {commits.map((c) => (
+                  <li key={c.sha} className="text-sm flex items-baseline gap-2.5">
+                    <code className="text-[11px] text-faint font-mono shrink-0">
+                      {c.sha}
+                    </code>
+                    <span className="truncate">{c.message}</span>
+                    {c.date && (
+                      <span className="text-[11px] text-faint shrink-0 ml-auto">
+                        {relativeTime(c.date)}
+                      </span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
 
-      {links.length > 0 && (
-        <section className="rise rise-2">
-          <p className="eyebrow mb-3">Connected</p>
-          <div className="flex flex-wrap gap-2">
-            {links.map((l, i) => (
-              <Link
-                key={i}
-                href={entityPath(l.type, l.id)}
-                className="inline-flex items-center gap-1.5 border border-line rounded-full px-3 py-1.5 text-xs hover:border-line-strong transition-colors"
-              >
-                <span className="text-faint">
-                  {l.direction === "out" ? l.relation : `${l.relation} by`}
-                </span>
-                {l.label}
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
-
-      <section className="rise rise-3">
-        <p className="eyebrow mb-3">Notes</p>
-        <div className="space-y-3 mb-4">
-          {(comments.data as Comment[])?.map((c) => (
-            <div key={c.id} className="text-sm">
-              <span
-                className={`text-xs font-medium mr-2 ${c.author_type === "aware" ? "" : "text-muted"}`}
-                style={c.author_type === "aware" ? { color: "var(--accent)" } : undefined}
-              >
-                {c.author_name}
-              </span>
-              <span className="text-xs text-faint">
-                {relativeTime(c.created_at)}
-              </span>
-              <p className="mt-1 leading-relaxed">{c.body}</p>
+          <section className="rise rise-3">
+            <p className="eyebrow mb-3">Notes</p>
+            <div className="space-y-3 mb-4">
+              {(comments.data as Comment[])?.map((c) => (
+                <div key={c.id} className="text-sm">
+                  <span
+                    className={`text-xs font-medium mr-2 ${c.author_type === "aware" ? "" : "text-muted"}`}
+                    style={
+                      c.author_type === "aware"
+                        ? { color: "var(--accent)" }
+                        : undefined
+                    }
+                  >
+                    {c.author_name}
+                  </span>
+                  <span className="text-xs text-faint">
+                    {relativeTime(c.created_at)}
+                  </span>
+                  <p className="mt-1 leading-relaxed">{c.body}</p>
+                </div>
+              ))}
             </div>
-          ))}
+            <CommentForm targetType={table} targetId={id} />
+          </section>
         </div>
-        <CommentForm targetType={table} targetId={id} />
-      </section>
 
-      <section className="rise rise-4">
-        <p className="eyebrow mb-2">History</p>
-        <ActivityFeed items={(activity.data as Activity[]) ?? []} />
-      </section>
+        {/* Right rail */}
+        <aside className="space-y-8 lg:border-l lg:border-line lg:pl-8 rise rise-2">
+          <div>
+            <p className="eyebrow mb-3">Status</p>
+            {row.status ? (
+              <StatusPicker table={table} id={id} current={row.status} />
+            ) : (
+              <span className="text-sm text-muted">—</span>
+            )}
+          </div>
+
+          {meta.length > 0 && (
+            <dl className="space-y-2.5">
+              {meta.map(([k, v]) => (
+                <div key={k} className="flex items-baseline gap-3 text-sm">
+                  <dt className="text-faint text-xs w-16 shrink-0">{k}</dt>
+                  <dd className="text-muted min-w-0 truncate">{v}</dd>
+                </div>
+              ))}
+              <div className="flex items-baseline gap-3 text-sm">
+                <dt className="text-faint text-xs w-16 shrink-0">updated</dt>
+                <dd className="text-muted">
+                  {relativeTime(row.updated_at ?? row.created_at)}
+                </dd>
+              </div>
+            </dl>
+          )}
+
+          {links.length > 0 && (
+            <div>
+              <p className="eyebrow mb-3">Connected</p>
+              <div className="flex flex-col gap-1.5">
+                {links.map((l, i) => (
+                  <Link
+                    key={i}
+                    href={entityPath(l.type, l.id)}
+                    className="text-sm text-muted hover:text-fg transition-colors truncate"
+                  >
+                    <span className="text-faint text-xs">
+                      {l.direction === "out" ? l.relation : `${l.relation} by`}{" "}
+                    </span>
+                    {l.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {(activity.data as Activity[])?.length > 0 && (
+            <div>
+              <p className="eyebrow mb-3">History</p>
+              <ul className="space-y-2">
+                {(activity.data as Activity[]).map((a) => (
+                  <li key={a.id} className="text-xs text-muted leading-relaxed">
+                    <span
+                      className={a.actor_type === "aware" ? "" : "text-faint"}
+                      style={
+                        a.actor_type === "aware"
+                          ? { color: "var(--accent)" }
+                          : undefined
+                      }
+                    >
+                      {a.actor_name}
+                    </span>{" "}
+                    {a.verb}
+                    <span className="text-faint"> · {relativeTime(a.created_at)}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </aside>
+      </div>
     </div>
   );
 }

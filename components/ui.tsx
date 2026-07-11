@@ -122,3 +122,129 @@ export function ActorMark({ actorType }: { actorType: string }) {
     </span>
   );
 }
+
+export function Orb({
+  size = 10,
+  active = false,
+}: {
+  size?: number;
+  active?: boolean;
+}) {
+  return (
+    <span
+      aria-hidden
+      className={`orb inline-block shrink-0 ${active ? "orb--active" : ""}`}
+      style={{ width: size, height: size }}
+    />
+  );
+}
+
+export function Sparkline({
+  points,
+  width = 72,
+  height = 20,
+  accent = false,
+}: {
+  points: number[];
+  width?: number;
+  height?: number;
+  accent?: boolean;
+}) {
+  if (!points.length || points.every((p) => p === 0)) {
+    return (
+      <svg width={width} height={height} aria-hidden>
+        <line
+          x1="0"
+          y1={height - 1}
+          x2={width}
+          y2={height - 1}
+          stroke="var(--line-strong)"
+          strokeWidth="1"
+        />
+      </svg>
+    );
+  }
+  const max = Math.max(...points);
+  const min = Math.min(...points);
+  const range = max - min || 1;
+  const step = width / (points.length - 1 || 1);
+  const d = points
+    .map(
+      (p, i) =>
+        `${i === 0 ? "M" : "L"}${(i * step).toFixed(1)},${(
+          height -
+          2 -
+          ((p - min) / range) * (height - 4)
+        ).toFixed(1)}`
+    )
+    .join(" ");
+  return (
+    <svg width={width} height={height} aria-hidden>
+      <path
+        d={d}
+        fill="none"
+        stroke={accent ? "var(--accent)" : "var(--muted)"}
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        opacity={accent ? 1 : 0.8}
+      />
+    </svg>
+  );
+}
+
+export function ProgressHair({
+  value,
+  max,
+}: {
+  value: number;
+  max: number;
+}) {
+  const pct = max > 0 ? Math.min(100, (value / max) * 100) : 0;
+  return (
+    <div className="w-full h-px bg-line-strong relative overflow-visible">
+      <div
+        className="absolute inset-y-0 left-0 h-px"
+        style={{
+          width: `${pct}%`,
+          background: "var(--accent)",
+          boxShadow: "0 0 8px rgba(255,77,0,0.6)",
+        }}
+      />
+    </div>
+  );
+}
+
+export function Card({
+  href,
+  children,
+}: {
+  href: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Link
+      href={href}
+      className="block border border-line rounded-xl p-5 transition-colors hover:border-line-strong hover:bg-raised group"
+    >
+      {children}
+    </Link>
+  );
+}
+
+export function Chip({
+  children,
+  tint,
+}: {
+  children: React.ReactNode;
+  tint?: string;
+}) {
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 border border-line rounded-full px-2.5 py-1 text-xs text-muted"
+      style={tint ? { borderColor: `color-mix(in srgb, ${tint} 35%, transparent)` } : undefined}
+    >
+      {children}
+    </span>
+  );
+}
