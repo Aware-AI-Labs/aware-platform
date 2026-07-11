@@ -208,7 +208,7 @@ export function ProgressHair({
         style={{
           width: `${pct}%`,
           background: "var(--accent)",
-          boxShadow: "0 0 8px rgba(255,77,0,0.6)",
+          boxShadow: "0 0 6px rgba(255,77,0,0.35)",
         }}
       />
     </div>
@@ -225,7 +225,7 @@ export function Card({
   return (
     <Link
       href={href}
-      className="block border border-line rounded-xl p-5 transition-colors hover:border-line-strong hover:bg-raised group"
+      className="block border border-line rounded-xl p-5 transition-all hover:border-line-strong hover:shadow-[0_2px_20px_rgba(10,10,10,0.06)] group"
     >
       {children}
     </Link>

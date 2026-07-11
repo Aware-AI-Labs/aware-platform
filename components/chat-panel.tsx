@@ -181,7 +181,7 @@ export function ChatPanel({ profile }: { profile: Profile }) {
         <button
           onClick={() => setOpen(true)}
           aria-label="Talk to AWARE"
-          className="hidden md:flex fixed bottom-5 right-5 z-40 items-center gap-2.5 rounded-full glass border border-line-strong pl-3.5 pr-4 py-2.5 text-sm font-medium shadow-xl transition-transform hover:scale-[1.03]"
+          className="hidden md:flex fixed bottom-5 right-5 z-40 items-center gap-2.5 rounded-full glass float-shadow pl-3.5 pr-4 py-2.5 text-sm font-medium transition-transform hover:scale-[1.03]"
         >
           <Orb size={10} />
           AWARE
@@ -189,7 +189,7 @@ export function ChatPanel({ profile }: { profile: Profile }) {
       )}
 
       {open && (
-        <div className="fixed inset-0 md:inset-auto md:bottom-4 md:right-4 md:top-4 md:w-[420px] z-50 flex flex-col glass md:border md:border-line-strong md:rounded-2xl shadow-2xl">
+        <div className="fixed inset-0 md:inset-auto md:bottom-4 md:right-4 md:top-4 md:w-[420px] z-50 flex flex-col glass md:rounded-2xl md:float-shadow">
           <header className="flex items-center justify-between px-4 py-3.5 border-b border-line shrink-0">
             <div className="flex items-center gap-2.5">
               <Orb size={12} active={busy} />

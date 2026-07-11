@@ -175,11 +175,11 @@ export function CommandK() {
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-start justify-center pt-[14vh] px-4"
+      className="fixed inset-0 z-50 bg-black/15 backdrop-blur-sm flex items-start justify-center pt-[14vh] px-4"
       onClick={close}
     >
       <div
-        className="w-full max-w-lg glass border border-line-strong rounded-2xl overflow-hidden shadow-2xl rise"
+        className="w-full max-w-lg glass rounded-2xl overflow-hidden float-shadow rise"
         onClick={(e) => e.stopPropagation()}
       >
         <input
