@@ -45,7 +45,7 @@ export default async function CapitalPage() {
 
   return (
     <div className="space-y-12">
-      <PageHeader eyebrow="Capital" title="Money." />
+      <PageHeader title="Capital." />
 
       {/* Runway — the number that matters, big */}
       <section className="rise rise-1 grid grid-cols-2 sm:grid-cols-4 gap-6">
@@ -95,7 +95,7 @@ export default async function CapitalPage() {
       </section>
 
       <section className="rise rise-2">
-        <p className="eyebrow mb-3">Investor pipeline</p>
+        <p className="eyebrow mb-3">Investors</p>
         {(investors.data as Person[])?.length ? (
           <div>
             {(investors.data as Person[]).map((p) => (
@@ -111,10 +111,7 @@ export default async function CapitalPage() {
             ))}
           </div>
         ) : (
-          <Empty>
-            No investors tracked yet. Tell AWARE who you&apos;re talking to —
-            it keeps the pipeline and drafts updates from live company data.
-          </Empty>
+          <Empty>Tell AWARE who you&apos;re talking to.</Empty>
         )}
       </section>
 
@@ -138,11 +135,7 @@ export default async function CapitalPage() {
             ))}
           </div>
         ) : (
-          <Empty>
-            Empty ledger. Give AWARE the numbers — balance, monthly burn,
-            commitments — and runway computes itself. Finance writes always
-            pass your approval.
-          </Empty>
+          <Empty>Give AWARE the numbers. Runway computes itself.</Empty>
         )}
       </section>
     </div>

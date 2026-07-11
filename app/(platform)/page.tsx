@@ -1,18 +1,18 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { getProfile, entityPath, relativeTime } from "@/lib/data";
+import { getProfile, entityPath } from "@/lib/data";
 import { ActivityFeed } from "@/components/activity-feed";
 import { ApprovalCard } from "@/components/approvals";
 import { AlertRow } from "@/components/alerts";
 import { Markdown, Status, Row } from "@/components/ui";
 import type { Activity, Alert, Approval, Workstream } from "@/lib/types";
+import { BriefReader } from "@/components/brief-reader";
 
 export default async function Home() {
   const profile = (await getProfile())!;
   const supabase = await createClient();
-  const firstName = (profile.name || profile.email).split(/[\s@]/)[0];
 
-  const [brief, workstreams, alerts, approvals, activity, myTasks] =
+  const [brief, workstreams, alerts, approvals, activity, taskCount] =
     await Promise.all([
       supabase
         .from("docs")
@@ -32,7 +32,7 @@ export default async function Home() {
         .select("*")
         .eq("status", "open")
         .order("created_at", { ascending: false })
-        .limit(5),
+        .limit(4),
       profile.role === "member"
         ? Promise.resolve({ data: [] })
         : supabase
@@ -45,21 +45,28 @@ export default async function Home() {
         .from("activity")
         .select("*")
         .order("id", { ascending: false })
-        .limit(10),
+        .limit(8),
       supabase
         .from("tasks")
-        .select("id, title, status, priority")
-        .in("status", ["todo", "doing", "blocked"])
-        .order("priority")
-        .limit(6),
+        .select("id", { count: "exact", head: true })
+        .in("status", ["todo", "doing", "blocked"]),
     ]);
 
-  const hour = new Date().getHours();
-  const greeting = hour < 12 ? "Morning" : hour < 18 ? "Afternoon" : "Evening";
+  // Headline = first meaningful line of the brief; rest reads on demand.
+  const raw = ((brief.data?.body ?? "") as string)
+    .split("\n")
+    .map((l: string) => l.trim())
+    .filter((l: string) => l && !l.startsWith("#"));
+  const headline = raw[0]?.replace(/\*\*/g, "") ?? "";
+  const rest = brief.data
+    ? brief.data.body.slice(brief.data.body.indexOf(raw[0]) + raw[0].length)
+    : "";
+
+  const pending = (approvals.data as Approval[]) ?? [];
+  const openAlerts = (alerts.data as Alert[]) ?? [];
 
   return (
-    <div className="space-y-12">
-      {/* The brief — editorial, not a widget */}
+    <div className="space-y-14">
       <section className="rise">
         <p className="eyebrow">
           {new Date().toLocaleDateString("en-US", {
@@ -68,35 +75,17 @@ export default async function Home() {
             day: "numeric",
           })}
         </p>
-        <h1 className="display text-4xl sm:text-5xl mt-3">
-          {greeting}, {firstName}.
+        <h1 className="display text-4xl sm:text-6xl mt-4 max-w-3xl text-balance">
+          {headline || "Quiet. AWARE is watching."}
         </h1>
-        {brief.data ? (
-          <div className="mt-6 max-w-2xl">
-            <Markdown>{brief.data.body}</Markdown>
-            <p className="text-xs text-faint mt-3">
-              — AWARE,{" "}
-              {relativeTime(brief.data.created_at) === "now"
-                ? "just now"
-                : `${relativeTime(brief.data.created_at)} ago`}
-            </p>
-          </div>
-        ) : (
-          <p className="text-muted mt-5 max-w-xl text-sm leading-relaxed">
-            No morning brief yet — AWARE writes one every day once its
-            heartbeat is running. Ask it anything meanwhile.
-          </p>
-        )}
+        {rest && <BriefReader body={rest} />}
       </section>
 
-      {/* Approvals waiting on the founder */}
-      {(approvals.data as Approval[])?.length > 0 && (
+      {pending.length > 0 && (
         <section className="rise rise-1">
-          <p className="eyebrow mb-4">
-            Waiting on you · {(approvals.data as Approval[]).length}
-          </p>
+          <p className="eyebrow mb-4">Approve</p>
           <div className="space-y-2">
-            {(approvals.data as Approval[]).map((a) => (
+            {pending.map((a) => (
               <ApprovalCard
                 key={a.id}
                 approval={a}
@@ -107,26 +96,42 @@ export default async function Home() {
         </section>
       )}
 
-      {/* Alerts & risks */}
-      {(alerts.data as Alert[])?.length > 0 && (
+      {openAlerts.length > 0 && (
         <section className="rise rise-1">
           <p className="eyebrow mb-2">Alerts</p>
           <div>
-            {(alerts.data as Alert[]).map((a) => (
+            {openAlerts.map((a) => (
               <AlertRow key={a.id} alert={a} />
             ))}
           </div>
         </section>
       )}
 
-      {/* What matters */}
-      <section className="rise rise-2">
-        <div className="flex items-baseline justify-between mb-3">
-          <p className="eyebrow">What matters now</p>
-          <Link href="/work" className="text-xs text-faint hover:text-fg transition-colors">
-            all work →
-          </Link>
-        </div>
+      <section className="rise rise-2 grid grid-cols-3 gap-6 border-y border-line py-8">
+        <Link href="/work" className="group">
+          <p className="display text-4xl sm:text-5xl tabular-nums group-hover:text-muted transition-colors">
+            {(workstreams.data ?? []).length}
+          </p>
+          <p className="eyebrow mt-2">Active</p>
+        </Link>
+        <Link href="/work" className="group">
+          <p className="display text-4xl sm:text-5xl tabular-nums group-hover:text-muted transition-colors">
+            {taskCount.count ?? 0}
+          </p>
+          <p className="eyebrow mt-2">Open tasks</p>
+        </Link>
+        <Link href="/mind" className="group">
+          <p
+            className="display text-4xl sm:text-5xl tabular-nums group-hover:opacity-80 transition-opacity"
+            style={pending.length ? { color: "var(--accent)" } : undefined}
+          >
+            {pending.length}
+          </p>
+          <p className="eyebrow mt-2">Waiting on you</p>
+        </Link>
+      </section>
+
+      <section className="rise rise-3">
         <div>
           {(workstreams.data as Workstream[])?.map((w) => (
             <Row key={w.id} href={entityPath("workstreams", w.id)}>
@@ -134,9 +139,6 @@ export default async function Home() {
                 {w.kind}
               </span>
               <span className="text-sm font-medium truncate">{w.name}</span>
-              <span className="text-xs text-faint truncate hidden sm:block">
-                {w.summary}
-              </span>
               <span className="ml-auto shrink-0">
                 <Status status={w.status} />
               </span>
@@ -145,29 +147,8 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* Open tasks */}
-      {(myTasks.data ?? []).length > 0 && (
-        <section className="rise rise-3">
-          <p className="eyebrow mb-3">Open tasks</p>
-          <div>
-            {(myTasks.data ?? []).map((t) => (
-              <Row key={t.id} href={entityPath("tasks", t.id)}>
-                <span className="text-xs text-faint w-6 shrink-0">
-                  p{t.priority}
-                </span>
-                <span className="text-sm truncate">{t.title}</span>
-                <span className="ml-auto shrink-0">
-                  <Status status={t.status} />
-                </span>
-              </Row>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* The pulse */}
       <section className="rise rise-4">
-        <p className="eyebrow mb-2">Activity</p>
+        <p className="eyebrow mb-2">Pulse</p>
         <ActivityFeed items={(activity.data as Activity[]) ?? []} />
       </section>
     </div>

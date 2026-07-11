@@ -251,7 +251,7 @@ export default async function EntityPage({
       )}
 
       <section className="rise rise-3">
-        <p className="eyebrow mb-3">Discussion</p>
+        <p className="eyebrow mb-3">Notes</p>
         <div className="space-y-3 mb-4">
           {(comments.data as Comment[])?.map((c) => (
             <div key={c.id} className="text-sm">

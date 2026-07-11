@@ -52,11 +52,7 @@ export function InviteForm() {
           Invite
         </button>
       </div>
-      <p className="text-xs text-faint mt-2">
-        member — all non-sensitive knowledge · core — includes capital &
-        sensitive
-      </p>
-      {message && <p className="text-xs text-muted mt-1">{message}</p>}
+      {message && <p className="text-xs text-muted mt-2">{message}</p>}
     </form>
   );
 }

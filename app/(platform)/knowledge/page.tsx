@@ -24,7 +24,7 @@ export default async function KnowledgePage() {
 
   return (
     <div className="space-y-12">
-      <PageHeader eyebrow="The company's memory" title="Knowledge." />
+      <PageHeader title="Knowledge." />
 
       <section className="rise rise-1">
         <p className="eyebrow mb-3">Decisions</p>
@@ -51,7 +51,7 @@ export default async function KnowledgePage() {
             ))}
           </div>
         ) : (
-          <Empty>No decisions logged.</Empty>
+          <Empty>None yet.</Empty>
         )}
       </section>
 

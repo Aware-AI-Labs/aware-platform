@@ -24,11 +24,11 @@ export default async function PeoplePage() {
 
   return (
     <div className="space-y-12">
-      <PageHeader eyebrow="The company" title="People." />
+      <PageHeader title="People." />
 
       {profile.role === "founder" && (
         <section className="rise rise-1">
-          <p className="eyebrow mb-3">Invite to Aware OS</p>
+          <p className="eyebrow mb-3">Invite</p>
           <InviteForm />
         </section>
       )}
@@ -60,10 +60,7 @@ export default async function PeoplePage() {
                 ))}
               </div>
             ) : (
-              <Empty>
-                The pipeline is open — 25 seats in the lab house. Tell AWARE
-                about candidates and it files them here.
-              </Empty>
+              <Empty>25 seats open.</Empty>
             )}
           </section>
         );

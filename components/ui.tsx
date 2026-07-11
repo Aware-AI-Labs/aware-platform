@@ -45,22 +45,40 @@ export function Eyebrow({ children }: { children: React.ReactNode }) {
 }
 
 export function PageHeader({
-  eyebrow,
   title,
   action,
 }: {
-  eyebrow: string;
+  eyebrow?: string;
   title: string;
   action?: React.ReactNode;
 }) {
   return (
     <header className="flex items-end justify-between gap-4 rise">
-      <div>
-        <p className="eyebrow">{eyebrow}</p>
-        <h1 className="display text-3xl sm:text-4xl mt-2">{title}</h1>
-      </div>
+      <h1 className="display text-4xl sm:text-5xl">{title}</h1>
       {action}
     </header>
+  );
+}
+
+export function Stat({
+  label,
+  value,
+  accent,
+}: {
+  label: string;
+  value: string | number;
+  accent?: boolean;
+}) {
+  return (
+    <div>
+      <p
+        className="display text-4xl sm:text-5xl tabular-nums"
+        style={accent ? { color: "var(--accent)" } : undefined}
+      >
+        {value}
+      </p>
+      <p className="eyebrow mt-2">{label}</p>
+    </div>
   );
 }
 

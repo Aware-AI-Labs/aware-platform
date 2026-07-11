@@ -25,7 +25,7 @@ export default async function ResearchPage() {
 
   return (
     <div className="space-y-12">
-      <PageHeader eyebrow="The lab" title="Research." />
+      <PageHeader title="Research." />
 
       <section className="rise rise-1">
         <p className="eyebrow mb-3">Programs</p>
@@ -71,12 +71,7 @@ export default async function ResearchPage() {
             ))}
           </div>
         ) : (
-          <Empty>
-            No experiments logged yet. Tell AWARE a hypothesis — it will
-            structure the run, track config and metrics, and record the
-            verdict. GitHub research repos flow in automatically once the
-            webhook is live.
-          </Empty>
+          <Empty>No runs yet. Give AWARE a hypothesis.</Empty>
         )}
       </section>
     </div>

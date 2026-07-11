@@ -52,24 +52,24 @@ export default async function MindPage() {
             className="size-2 rounded-full pulse-dot"
             style={{ background: "var(--accent)" }}
           />
-          <p className="eyebrow">AWARE · operating intelligence</p>
+          <p className="eyebrow">AWARE</p>
         </div>
         <h1 className="display text-4xl sm:text-5xl mt-3">Mind.</h1>
-        <p className="text-faint text-xs mt-4">
-          {ai?.last_tick
-            ? `last heartbeat ${relativeTime(ai.last_tick)} ago`
-            : "heartbeat not started — AWARE thinks when the crons are wired"}
-          {ai?.last_daily && ` · last brief ${relativeTime(ai.last_daily)} ago`}
-          {ai?.last_weekly && ` · last review ${relativeTime(ai.last_weekly)} ago`}
-        </p>
+        {ai?.last_tick && (
+          <p className="text-faint text-xs mt-4">
+            heartbeat {relativeTime(ai.last_tick)}
+            {ai?.last_daily && ` · brief ${relativeTime(ai.last_daily)}`}
+            {ai?.last_weekly && ` · review ${relativeTime(ai.last_weekly)}`}
+          </p>
+        )}
       </header>
 
       <section className="rise rise-1 max-w-2xl">
-        <p className="eyebrow mb-3">Current focus</p>
+        <p className="eyebrow mb-3">Focus</p>
         {ai?.focus ? (
           <Markdown>{ai.focus}</Markdown>
         ) : (
-          <Empty>Nothing yet.</Empty>
+          <Empty>—</Empty>
         )}
       </section>
 
@@ -120,12 +120,12 @@ export default async function MindPage() {
       )}
 
       <section className="rise rise-3">
-        <p className="eyebrow mb-2">Reasoning stream</p>
+        <p className="eyebrow mb-2">Reasoning</p>
         <ActivityFeed items={(awareActivity.data as Activity[]) ?? []} />
       </section>
 
       <section className="rise rise-4">
-        <p className="eyebrow mb-3">What it remembers</p>
+        <p className="eyebrow mb-3">Memory</p>
         {memories.data?.length ? (
           <ul className="space-y-2">
             {memories.data.map((m) => (
@@ -138,10 +138,7 @@ export default async function MindPage() {
             ))}
           </ul>
         ) : (
-          <Empty>
-            Memory forms through conversation and heartbeats — durable facts,
-            preferences, insights.
-          </Empty>
+          <Empty>Forms as it works.</Empty>
         )}
       </section>
     </div>

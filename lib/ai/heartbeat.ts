@@ -96,7 +96,7 @@ export async function daily() {
 
 1. Review the signals and the graph (list what you need: active workstreams, open tasks, recent decisions, open alerts).
 2. Check the news quickly (web_search, max 2 searches): anything in AI/robotics/funding that materially affects Aware AI Labs — competitors, model releases, humanoid robotics moves.
-3. Create a doc: create_entity docs with kind "brief", title "Brief — <Month Day>". Structure: one strong opening line on the state of the company; "Today" — the 2-4 things that matter most and why; "Watch" — risks or external signals worth knowing; keep it under 300 words, editorial voice, no filler. It is company-visible: refer to capital only at a high level (no exact balances).
+3. Create a doc: create_entity docs with kind "brief", title "Brief — <Month Day>". Format rules — strict: the FIRST LINE is a single headline under 10 words (it renders huge on Home, like a magazine cover — make it land); then at most 3 short paragraphs or bullets, under 120 words total. No section headers, no filler, no restating the obvious. Company-visible: capital at a high level only.
 4. Update your focus (update_focus) for the day.`,
     { model: MODEL, webSearch: true, maxTurns: 10 }
   );
@@ -109,7 +109,7 @@ export async function weekly() {
 
 1. Review the full graph: workstreams by priority, tasks done vs stale, experiments and verdicts, decisions logged, the fundraise, alerts.
 2. Scan the outside world (web_search, max 3 searches): the week in AI/robotics that matters to our strategy.
-3. Create a doc: create_entity docs with kind "weekly_review", title "Weekly Review — <Month Day>". Structure: "What moved" (real progress), "What's stuck" (name it plainly and why), "Outside" (external signals + implications), "What I would do next week" (your genuine recommendation as co-leader, ranked). Under 500 words. Company-visible: capital at a high level only.
+3. Create a doc: create_entity docs with kind "weekly_review", title "Weekly Review — <Month Day>". First line: one headline under 10 words. Then four tight sections: Moved / Stuck / Outside / Next (your ranked recommendation). Under 250 words total — every sentence must earn its place. Company-visible: capital at a high level only.
 4. If anything deserves a decision, log it or file a proposal.
 5. Update your focus and open questions (update_focus).`,
     { model: MODEL, webSearch: true, maxTurns: 12 }

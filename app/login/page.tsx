@@ -35,9 +35,7 @@ function LoginForm() {
         <div className="w-full max-w-sm">
           <p className="eyebrow rise">Aware AI Labs</p>
           <h1 className="display text-5xl mt-3 rise rise-1">Aware OS.</h1>
-          <p className="text-muted mt-4 text-sm leading-relaxed rise rise-2">
-            The operating platform of the lab. One graph, run by AWARE.
-          </p>
+          <p className="text-muted mt-4 text-sm rise rise-2">Run by AWARE.</p>
 
           {state === "sent" ? (
             <div className="mt-10 rise">
@@ -76,9 +74,7 @@ function LoginForm() {
         </div>
       </div>
       <footer className="px-6 py-5 text-center">
-        <p className="text-faint text-xs">
-          Invite-only · Humanoid robots, and more.
-        </p>
+        <p className="text-faint text-xs">Invite-only</p>
       </footer>
     </main>
   );

@@ -35,7 +35,7 @@ export default async function WorkPage() {
 
   return (
     <div className="space-y-12">
-      <PageHeader eyebrow="Execution" title="Work." />
+      <PageHeader title="Work." />
 
       {GROUPS.map(({ kind, label }) => {
         const rows = workstreams.filter((w) => w.kind === kind);
@@ -86,7 +86,7 @@ export default async function WorkPage() {
               </Row>
             ))
           ) : (
-            <Empty>No open tasks. Tell AWARE what needs doing.</Empty>
+            <Empty>Nothing open.</Empty>
           )}
         </div>
       </section>
