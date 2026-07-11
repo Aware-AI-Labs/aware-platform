@@ -1,26 +1,133 @@
 @import "tailwindcss";
 
+/* ————— Aware OS design tokens ————— */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg: #09090b;
+  --raised: #0f0f13;
+  --hover: #17171d;
+  --line: rgba(255, 255, 255, 0.07);
+  --line-strong: rgba(255, 255, 255, 0.14);
+  --fg: #f4f4f5;
+  --muted: #9d9da6;
+  --faint: #5c5c66;
+  --accent: #ff4d00;
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  --danger: #f87171;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-bg: var(--bg);
+  --color-raised: var(--raised);
+  --color-hover: var(--hover);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-accent: var(--accent);
+  --color-ok: var(--ok);
+  --color-warn: var(--warn);
+  --color-danger: var(--danger);
+  --font-sans: var(--font-geist-sans), system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  color-scheme: dark;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+  font-feature-settings: "cv11", "ss01";
+  -webkit-font-smoothing: antialiased;
 }
+
+::selection {
+  background: rgba(255, 77, 0, 0.35);
+}
+
+/* Editorial display type — statements, not labels */
+.display {
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  line-height: 1.02;
+}
+
+.eyebrow {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+/* One-time entrance, never bouncy */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.rise {
+  animation: rise 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.rise-1 { animation-delay: 0.05s; }
+.rise-2 { animation-delay: 0.1s; }
+.rise-3 { animation-delay: 0.16s; }
+.rise-4 { animation-delay: 0.22s; }
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+.pulse-dot {
+  animation: pulse-dot 2.4s ease-in-out infinite;
+}
+
+/* Quiet scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
+}
+
+/* Markdown body for docs, briefs, AI output */
+.prose-aware {
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  color: var(--fg);
+}
+.prose-aware h1, .prose-aware h2, .prose-aware h3 {
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin: 1.6em 0 0.5em;
+  line-height: 1.2;
+}
+.prose-aware h1 { font-size: 1.375rem; }
+.prose-aware h2 { font-size: 1.125rem; }
+.prose-aware h3 { font-size: 1rem; }
+.prose-aware p { margin: 0.75em 0; }
+.prose-aware ul, .prose-aware ol { margin: 0.75em 0; padding-left: 1.25em; }
+.prose-aware ul { list-style: disc; }
+.prose-aware ol { list-style: decimal; }
+.prose-aware li { margin: 0.3em 0; }
+.prose-aware a { color: var(--fg); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--line-strong); }
+.prose-aware a:hover { text-decoration-color: var(--accent); }
+.prose-aware code { font-family: var(--font-mono); font-size: 0.85em; background: var(--hover); padding: 0.15em 0.4em; border-radius: 4px; }
+.prose-aware pre { background: var(--raised); border: 1px solid var(--line); border-radius: 8px; padding: 0.9em 1em; overflow-x: auto; margin: 1em 0; }
+.prose-aware pre code { background: none; padding: 0; }
+.prose-aware blockquote { border-left: 2px solid var(--line-strong); padding-left: 1em; color: var(--muted); margin: 1em 0; }
+.prose-aware hr { border: none; border-top: 1px solid var(--line); margin: 1.5em 0; }
+.prose-aware strong { font-weight: 600; }
+.prose-aware table { width: 100%; border-collapse: collapse; margin: 1em 0; font-size: 0.875rem; }
+.prose-aware th, .prose-aware td { border: 1px solid var(--line); padding: 0.4em 0.7em; text-align: left; }
+.prose-aware th { color: var(--muted); font-weight: 500; }
