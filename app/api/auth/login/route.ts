@@ -93,9 +93,14 @@ export async function POST(request: Request) {
     },
   });
   if (otpError) {
+    const rateLimited = otpError.status === 429 || /rate/i.test(otpError.message);
     return NextResponse.json(
-      { error: "Could not send the sign-in link. Try again." },
-      { status: 500 }
+      {
+        error: rateLimited
+          ? "Email rate limit reached — Supabase's built-in mailer allows a few per hour. Wait a bit and try again."
+          : `Could not send the sign-in link: ${otpError.message}`,
+      },
+      { status: otpError.status ?? 500 }
     );
   }
 
